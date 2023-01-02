@@ -1,0 +1,6 @@
+__pycache__
+.idea
+dataset
+results_lstm_only
+argoverse_forecasting_baseline.h5
+results.pkl
