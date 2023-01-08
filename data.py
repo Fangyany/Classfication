@@ -27,6 +27,10 @@ class ArgoDataset(Dataset):
             self.avl = ArgoverseForecastingLoader(split)
             self.avl.seq_list = sorted(self.avl.seq_list)
             self.am = ArgoverseMap()
+
+        if 'raster' in config and config['raster']:
+            #TODO: DELETE
+            self.map_query = MapQuery(config['map_scale'])
             
     def __getitem__(self, idx):
         if 'preprocess' in self.config and self.config['preprocess']:
@@ -81,7 +85,15 @@ class ArgoDataset(Dataset):
         data = self.get_obj_feats(data)
         data['idx'] = idx
 
-       
+        if 'raster' in self.config and self.config['raster']:
+            x_min, x_max, y_min, y_max = self.config['pred_range']
+            cx, cy = data['orig']
+
+            region = [cx + x_min, cx + x_max, cy + y_min, cy + y_max]
+            raster = self.map_query.query(region, data['theta'], data['city'])
+
+            data['raster'] = raster
+            return data
 
         data['graph'] = self.get_lane_graph(data)
         return data
@@ -202,7 +214,7 @@ class ArgoDataset(Dataset):
                 continue
 
             ctrs.append(feat[-1, :2].copy())
-            traj1.append(feat.copy())
+            traj1.append((feat).copy())
 
             feat[1:, :2] -= feat[:-1, :2]
             feat[step[0], :2] = 0
@@ -530,7 +542,7 @@ def ref_copy(data):
             d[key] = ref_copy(data[key])
         return d
     return data
-    
+
     
 def dilated_nbrs(nbr, num_nodes, num_scales):
     # print("nbr=", nbr,"num_nodes=", num_nodes,"num_scales=", num_scales)
@@ -612,4 +624,5 @@ def cat(batch):
     else:
         return_batch = batch
     return return_batch
+
 

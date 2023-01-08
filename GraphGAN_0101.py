@@ -60,10 +60,9 @@ config["val_workers"] = config["workers"]
 
 """Dataset"""
 # Raw Dataset
-config["train_split"] = os.path.join(root_path, "dataset/train_mini/data")
-config["val_split"] = os.path.join(root_path, "dataset/val_mini/data")
-config["test_split"] = os.path.join(root_path, "dataset/test_mini/data")
-
+config["train_split"] = os.path.join(root_path, "dataset/train/data")
+config["val_split"] = os.path.join(root_path, "dataset/val/data")
+config["test_split"] = os.path.join(root_path, "dataset/test/data")
 
 # Preprocessed Dataset
 config["preprocess"] = True # whether use preprocess or not
@@ -300,13 +299,13 @@ class ActorNet(nn.Module):
         
     def init_hidden(self, batch):
         return (
-        torch.zeros(self.layer_num, batch, self.h_dim),
-        torch.zeros(self.layer_num, batch, self.h_dim)
+        torch.zeros(self.layer_num, batch, self.h_dim).cuda(),
+        torch.zeros(self.layer_num, batch, self.h_dim).cuda()
     )
         
     def forward(self, actors):
         out = actors
-        obs_traj_embedding = self.spatial_embedding(out.transpose(1,2))
+        obs_traj_embedding = self.spatial_embedding(out.transpose(1,2)).cuda()
         batch = obs_traj_embedding.size(0)
         # print(batch)
         state_tuple = self.init_hidden(batch)
@@ -409,7 +408,7 @@ class MapNet(nn.Module):
                 temp.index_add_(
                     0,
                     graph["right"]["u"],
-                    self.fuse["right"][i](feat[graph["right"]["v"]]),
+                    self.fu se["right"][i](feat[graph["right"]["v"]]),
                 )
 
             feat = self.fuse["norm"][i](temp)
@@ -703,29 +702,29 @@ class PredNet(nn.Module):
         h_dim = 128
         num_layers = 1
 
-        self.spatial_embedding0 = nn.Linear(2, embedding_dim)
-        self.decoder0 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos0 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding0 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder0 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos0 = nn.Linear(n_actor, 2*30).cuda()
 
-        self.spatial_embedding1 = nn.Linear(2, embedding_dim)
-        self.decoder1 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos1 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding1 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder1 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos1 = nn.Linear(n_actor, 2*30).cuda()
         
-        self.spatial_embedding2 = nn.Linear(2, embedding_dim)
-        self.decoder2 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos2 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding2 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder2 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos2 = nn.Linear(n_actor, 2*30).cuda()
         
-        self.spatial_embedding3 = nn.Linear(2, embedding_dim)
-        self.decoder3 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos3 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding3 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder3 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos3 = nn.Linear(n_actor, 2*30).cuda()
         
-        self.spatial_embedding4 = nn.Linear(2, embedding_dim)
-        self.decoder4 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos4 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding4 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder4 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos4 = nn.Linear(n_actor, 2*30).cuda()
         
-        self.spatial_embedding5 = nn.Linear(2, embedding_dim)
-        self.decoder5 = nn.LSTM(n_actor, n_actor, num_layers)
-        self.hidden2pos5 = nn.Linear(n_actor, 2*30)
+        self.spatial_embedding5 = nn.Linear(2, embedding_dim).cuda()
+        self.decoder5 = nn.LSTM(n_actor, n_actor, num_layers).cuda()
+        self.hidden2pos5 = nn.Linear(n_actor, 2*30).cuda()
 
 
         self.att_dest = AttDest(n_actor)
@@ -737,45 +736,45 @@ class PredNet(nn.Module):
         embedding_dim = h_dim = 128
         decoder_h_dim = 128
         decoder_h = actors.view(-1, decoder_h_dim)
-        decoder_h = torch.unsqueeze(decoder_h, 0)
+        decoder_h = torch.unsqueeze(decoder_h, 0).cuda()
         
         num_layers = 1
         batch = actors.size(0)
-        decoder_c = torch.zeros(num_layers, batch, decoder_h_dim)
+        decoder_c = torch.zeros(num_layers, batch, decoder_h_dim).cuda()
         state_tuple = (decoder_h, decoder_c)
             
-        ctrs = torch.cat(actor_ctrs, 0)
+        ctrs = torch.cat(actor_ctrs, 0).cuda()
         batch = ctrs.size(0)
         
         
         decoder_input0 = self.spatial_embedding0(ctrs)
         decoder_input0 = decoder_input0.view(1, batch, embedding_dim)
-        output0, state_tuple0 = self.decoder0(decoder_input0, state_tuple)
+        output0, state_tuple0 = self.decoder0(decoder_input0.cuda(), state_tuple)
         rel_pos0 = self.hidden2pos0(output0.view(-1, h_dim))
         
         decoder_input1 = self.spatial_embedding1(ctrs)
         decoder_input1 = decoder_input1.view(1, batch, embedding_dim)
-        output1, state_tuple1 = self.decoder1(decoder_input1, state_tuple)
+        output1, state_tuple1 = self.decoder1(decoder_input1.cuda(), state_tuple)
         rel_pos1 = self.hidden2pos1(output1.view(-1, h_dim))
         
         decoder_input2 = self.spatial_embedding2(ctrs)
         decoder_input2 = decoder_input2.view(1, batch, embedding_dim)
-        output2, state_tuple2 = self.decoder2(decoder_input2, state_tuple)
+        output2, state_tuple2 = self.decoder2(decoder_input2.cuda(), state_tuple)
         rel_pos2 = self.hidden2pos2(output2.view(-1, h_dim))
         
         decoder_input3 = self.spatial_embedding3(ctrs)
         decoder_input3 = decoder_input3.view(1, batch, embedding_dim)
-        output3, state_tuple3 = self.decoder3(decoder_input3, state_tuple)
+        output3, state_tuple3 = self.decoder3(decoder_input3.cuda(), state_tuple)
         rel_pos3 = self.hidden2pos3(output3.view(-1, h_dim))
         
         decoder_input4 = self.spatial_embedding4(ctrs)
         decoder_input4 = decoder_input4.view(1, batch, embedding_dim)
-        output4, state_tuple4 = self.decoder4(decoder_input4, state_tuple)
+        output4, state_tuple4 = self.decoder4(decoder_input4.cuda(), state_tuple)
         rel_pos4 = self.hidden2pos4(output4.view(-1, h_dim))
         
         decoder_input5 = self.spatial_embedding5(ctrs)
         decoder_input5 = decoder_input5.view(1, batch, embedding_dim)
-        output5, state_tuple5 = self.decoder5(decoder_input5, state_tuple)
+        output5, state_tuple5 = self.decoder5(decoder_input5.cuda(), state_tuple)
         rel_pos5 = self.hidden2pos5(output5.view(-1, h_dim))
         
         preds = []
@@ -895,109 +894,6 @@ class Att(nn.Module):
         agts += res
         agts = self.relu(agts)
         return agts
-
-
-
-
-
-class GAT(nn.Module):
-    def __init__(self, config):
-        super(GAT, self).__init__()
-        self.fc = nn.Linear(128, 128)
-        self.att_fc = nn.Linear(2*128, 1)
-        self.dist = nn.Sequential(
-                    nn.Linear(2, 128),
-                    nn.ReLU(inplace=True),
-                    Linear(128, 128, norm='GN', ng=1),
-                )
-        self.norm = nn.GroupNorm(1, 128*3)
-        self.linear = Linear(128*3, 128, norm='GN', ng=1, act=False)
-        self.relu = nn.ReLU(inplace=True)
-
-
-
-    def forward(self, agts: Tensor, agt_idcs: List[Tensor], agt_ctrs: List[Tensor], ctx: Tensor, ctx_idcs: List[Tensor], ctx_ctrs: List[Tensor], dist_th: float) -> Tensor:
-        res = agts
-        if len(ctx) == 0:
-            agts = self.agt(agts) 
-            agts = self.relu(agts)    
-            agts = self.linear(agts)
-            agts += res
-            agts = self.relu(agts)
-            return agts
-
-        batch_size = len(agt_idcs)
-        hi, wi = [], []
-        hi_count, wi_count = 0, 0
-        for i in range(batch_size):
-            dist = agt_ctrs[i].view(-1, 1, 2) - ctx_ctrs[i].view(1, -1, 2)
-            dist = torch.sqrt((dist ** 2).sum(2))
-            mask = dist <= dist_th
-
-            idcs = torch.nonzero(mask, as_tuple=False)
-            if len(idcs) == 0:
-                continue
-
-            hi.append(idcs[:, 0] + hi_count)
-            wi.append(idcs[:, 1] + wi_count)
-            hi_count += len(agt_idcs[i])
-            wi_count += len(ctx_idcs[i])
-        hi = torch.cat(hi, 0)
-        wi = torch.cat(wi, 0)
-
-
-        agt_ctrs = torch.cat(agt_ctrs, 0)
-        ctx_ctrs = torch.cat(ctx_ctrs, 0)
-        distance = agt_ctrs[hi] - ctx_ctrs[wi]
-        distance_dim = self.dist(distance)
-
-        z = self.fc(agts)
-        z_i = z[hi]
-        z_j = z[wi]
-
-        z_ij = torch.cat((z_i, z_j), dim =-1)
-        a_ij = self.att_fc(z_ij)
-
-        alpha_ij = []
-        h_new = []
-        for i in range(hi[-1]+1):
-            index = torch.nonzero(hi==i, as_tuple=False).squeeze(-1)
-
-            alpha_ij.append(F.softmax(a_ij[index], dim=0))
-
-            a_ij_new = F.softmax(a_ij[index], dim=0)
-            
-            x_i = z_i[torch.nonzero(hi==i, as_tuple=False)[0]]
-            x_j = z_j[index]
-            distance_dim_ij = distance_dim[index]
-
-            x_j_new = torch.cat((distance_dim_ij, x_j), dim=-1)
-            x_j_new_ = torch.sum(a_ij_new*x_j_new, dim=0).unsqueeze(0)
-            h_new.append(torch.cat((x_i, x_j_new_), -1))
-
-        h_new_ = torch.cat(h_new)
-
-        agts = self.norm(h_new_)
-        agts = self.relu(agts)
-
-        agts = self.linear(agts)
-        agts += res
-        agts = self.relu(agts)
-        return agts
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class AttDest(nn.Module):
@@ -1192,11 +1088,11 @@ def pred_metrics(preds, gt_preds, has_preds):
 
 def get_model():
     net = Net(config)
-    # net = net
+    # net = net.cuda()
 
-    # loss = Loss(config)
+    # loss = Loss(config).cuda()
     loss = Loss(config)
-    # post_process = PostProcess(config)
+    # post_process = PostProcess(config).cuda()
     post_process = PostProcess(config)
     params = net.parameters()
     # opt = Optimizer(params, config)
